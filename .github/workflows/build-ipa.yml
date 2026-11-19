@@ -1,0 +1,42 @@
+name: Build AvgDrive IPA
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Unsigned App
+        working-directory: "AvgDrive .swiftpm"
+        run: |
+          SCHEME=$(xcodebuild -list -json 2>/dev/null | python3 -c "import sys, json; d=json.load(sys.stdin); print((d.get('workspace',{}).get('schemes') or d.get('project',{}).get('schemes') or ['AvgDrive'])[0])" 2>/dev/null || echo "AvgDrive")
+          echo "Detected Scheme: $SCHEME"
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package IPA
+        working-directory: "AvgDrive .swiftpm"
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -r ../AvgDrive.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AvgDrive-ipa
+          path: AvgDrive.ipa
