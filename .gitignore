@@ -1,0 +1,12 @@
+# Swift Package Manager & Xcode
+.build/
+.swiftpm/xcode/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+
+# Sistem Dosyaları (iPadOS / macOS / Windows)
+.DS_Store
+Thumbs.db
+Desktop.ini
