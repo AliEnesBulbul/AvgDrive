@@ -1,14 +1,13 @@
 import Foundation
 import AVFoundation
-import Observation
+import Combine
 
 @MainActor
-@Observable
-final class VoiceCoach {
+final class VoiceCoach: ObservableObject {
     private let synthesizer = AVSpeechSynthesizer()
     
-    var isEnabled: Bool = true
-    var cooldownSeconds: TimeInterval = 12.0
+    @Published var isEnabled: Bool = true
+    @Published var cooldownSeconds: TimeInterval = 12.0
     
     private enum GuidanceCategory: Equatable {
         case idle
@@ -126,20 +125,4 @@ final class VoiceCoach {
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(
-                .playback,
-                mode: .voicePrompt,
-                options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers]
-            )
-            try session.setActive(true)
-        } catch {
-            // Ses oturumu başlatılamazsa uygulama çökmemeli, sessizce devam etmeli
-        }
-    }
-    func announceRecordingEvent(_ message: String) {
-        guard isEnabled else { return }
-        speak(message, interruptCurrent: true)
-    }
-
-}
-
+            try session.setCategory
