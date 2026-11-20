@@ -29,7 +29,6 @@ final class VoiceCoach: ObservableObject {
         
         let newCategory = category(for: guidance)
         
-        // Boşta veya hızı koruma durumuna geçişte sadece durumu güncelle, gereksiz konuşma yapma
         if newCategory == .idle {
             lastCategory = .idle
             return
@@ -42,7 +41,6 @@ final class VoiceCoach: ObservableObject {
             return now.timeIntervalSince(lastDate) >= cooldownSeconds
         }()
         
-        // Yalnızca durum değiştiğinde VEYA aynı uyarı için soğuma süresi dolduğunda konuş
         guard isStateChanged || isCooldownExpired else { return }
         
         switch guidance {
@@ -59,7 +57,6 @@ final class VoiceCoach: ObservableObject {
             lastSpokenDate = now
             
         case .maintain:
-            // Yalnızca yavaşla/hızlan durumundan normale dönüldüğünde kısa onay ver
             if lastCategory == .slowDown || lastCategory == .speedUp {
                 speak("Hızın uygun.", interruptCurrent: false)
                 lastSpokenDate = now
@@ -125,4 +122,19 @@ final class VoiceCoach: ObservableObject {
     private func configureAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory
+            try session.setCategory(
+                .playback,
+                mode: .voicePrompt,
+                options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers]
+            )
+            try session.setActive(true)
+        } catch {
+            // Ses oturumu başlatılamazsa uygulama çökmemeli, sessizce devam etmeli
+        }
+    }
+    
+    func announceRecordingEvent(_ message: String) {
+        guard isEnabled else { return }
+        speak(message, interruptCurrent: true)
+    }
+}
