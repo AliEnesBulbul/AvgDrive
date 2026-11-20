@@ -5,10 +5,10 @@ import UIKit
 struct CorridorManagementView: View {
     @Environment(\.dismiss) private var dismiss
     
-    var store: CorridorStore
-    var recorder: CorridorRecorder
-    var locationService: LocationService
-    var voiceCoach: VoiceCoach
+    @ObservedObject var store: CorridorStore
+    @ObservedObject var recorder: CorridorRecorder
+    @ObservedObject var locationService: LocationService
+    @ObservedObject var voiceCoach: VoiceCoach
     var latestLocation: CLLocation?
     
     @State private var corridorName: String = ""
@@ -36,12 +36,11 @@ struct CorridorManagementView: View {
                         }
                 }
                 .listRowBackground(Color.clear)
-
             }
             .navigationTitle("Koridorlarım")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Kapat") { dismiss() }
                 }
             }
@@ -57,8 +56,6 @@ struct CorridorManagementView: View {
             }
         }
     }
-   
-
     
     // MARK: - Güzergah Kayıt Bölümü
     
@@ -195,8 +192,8 @@ struct CorridorManagementView: View {
 struct FullScreenCorridorRecorderView: View {
     @Environment(\.dismiss) private var dismiss
     
-    var recorder: CorridorRecorder
-    var voiceCoach: VoiceCoach
+    @ObservedObject var recorder: CorridorRecorder
+    @ObservedObject var voiceCoach: VoiceCoach
     var latestLocation: CLLocation?
     
     @State private var lockRemainingSeconds: Int = 0
@@ -309,4 +306,3 @@ struct FullScreenCorridorRecorderView: View {
         }
     }
 }
-
