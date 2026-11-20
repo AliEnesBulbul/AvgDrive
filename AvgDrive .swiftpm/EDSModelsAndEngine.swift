@@ -1,6 +1,6 @@
 import Foundation
 import CoreLocation
-import Observation
+import Combine
 
 // MARK: - Veri Modelleri
 
@@ -102,23 +102,20 @@ struct CorridorSessionSummary: Identifiable, Equatable {
 // MARK: - Hesaplama Motoru
 
 @MainActor
-@Observable
-final class SpeedCorridorManager {
+final class SpeedCorridorManager: ObservableObject {
     // Kayıtlı koridorlar
-    var zones: [EDSZone]
-    // SpeedCorridorManager içine, "var zones: [EDSZone]" satırının altına ekle:
-    var useTenPercentTolerance: Bool = false
+    @Published var zones: [EDSZone]
+    @Published var useTenPercentTolerance: Bool = false
     
     func effectiveSpeedLimitKmh(for zone: EDSZone) -> Double {
         useTenPercentTolerance ? zone.speedLimitKmh * 1.10 : zone.speedLimitKmh
     }
-
     
     // Anlık durumlar
-    private(set) var activeSession: CorridorSession?
-    private(set) var lastCompletedSummary: CorridorSessionSummary?
-    private(set) var currentSpeedKmh: Double = 0
-    private(set) var guidance: SpeedGuidance = .idle
+    @Published private(set) var activeSession: CorridorSession?
+    @Published private(set) var lastCompletedSummary: CorridorSessionSummary?
+    @Published private(set) var currentSpeedKmh: Double = 0
+    @Published private(set) var guidance: SpeedGuidance = .idle
     
     // Hesaplama eşikleri
     private let slowDownToleranceKmh: Double = 2.0
@@ -254,6 +251,7 @@ final class SpeedCorridorManager {
         let rawTargetKmh = (remainingMeters / remainingAllowedSeconds) * 3.6
         return max(0, min(rawTargetKmh, effectiveLimitKmh))
     }
+    
     private func evaluateGuidance(
         currentSpeedKmh: Double,
         averageSpeedKmh: Double,
@@ -271,7 +269,6 @@ final class SpeedCorridorManager {
         
         return .maintain
     }
-
     
     private func finishSession(_ session: CorridorSession, endTime: Date, effectiveLimitKmh: Double) {
         let duration = max(1.0, endTime.timeIntervalSince(session.startTime))
@@ -291,7 +288,6 @@ final class SpeedCorridorManager {
         activeSession = nil
         guidance = .idle
     }
-
     
     nonisolated static func metersPerSecondToKmh(_ mps: Double) -> Double {
         guard mps > 0 else { return 0 }
@@ -312,4 +308,3 @@ final class SpeedCorridorManager {
         )
     ]
 }
-
