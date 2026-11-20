@@ -1,12 +1,11 @@
 import SwiftUI
 import CoreLocation
-import Observation
+import Combine
 
 @MainActor
-@Observable
-final class DeskLocationSimulator {
-    private(set) var isRunning: Bool = false
-    var simulatedSpeedKmh: Double = 85
+final class DeskLocationSimulator: ObservableObject {
+    @Published private(set) var isRunning: Bool = false
+    @Published var simulatedSpeedKmh: Double = 85
     
     private var simulationTask: Task<Void, Never>?
     private var traveledMeters: Double = 0
@@ -53,10 +52,10 @@ struct SimulationLabView: View {
     @Environment(\.dismiss) private var dismiss
     
     var savedZones: [EDSZone]
-    var voiceCoach: VoiceCoach
+    @ObservedObject var voiceCoach: VoiceCoach
     
-    @State private var simulator = DeskLocationSimulator()
-    @State private var testManager = SpeedCorridorManager()
+    @StateObject private var simulator = DeskLocationSimulator()
+    @StateObject private var testManager = SpeedCorridorManager()
     
     private var activeTestZone: EDSZone {
         savedZones.first ?? EDSZone(
@@ -156,7 +155,7 @@ struct SimulationLabView: View {
             .navigationTitle("Masa Başı Test")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Kapat") {
                         stopSimulation()
                         dismiss()
@@ -166,15 +165,15 @@ struct SimulationLabView: View {
             .onDisappear {
                 stopSimulation()
             }
-            .onChange(of: testManager.activeSession?.zone.id) { oldID, newID in
-                if oldID == nil, let zone = testManager.activeSession?.zone {
+            .onChange(of: testManager.activeSession?.zone.id) { newID in
+                if newID != nil, let zone = testManager.activeSession?.zone {
                     voiceCoach.announceZoneEntry(zone: zone)
                 }
             }
-            .onChange(of: testManager.guidance) { _, newGuidance in
+            .onChange(of: testManager.guidance) { newGuidance in
                 voiceCoach.handleGuidance(newGuidance)
             }
-            .onChange(of: testManager.lastCompletedSummary?.id) { _, _ in
+            .onChange(of: testManager.lastCompletedSummary?.id) { _ in
                 if let summary = testManager.lastCompletedSummary {
                     voiceCoach.announceZoneExit(summary: summary)
                     simulator.stop()
@@ -210,4 +209,3 @@ struct SimulationLabView: View {
         voiceCoach.reset()
     }
 }
-
