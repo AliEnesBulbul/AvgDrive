@@ -1,17 +1,16 @@
 import Foundation
 import CoreLocation
-import Observation
+import Combine
 
 // MARK: - Gerçek GPS Konum Sağlayıcı
 
 @MainActor
-@Observable
-final class LocationService: NSObject, CLLocationManagerDelegate {
+final class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     
-    private(set) var authorizationStatus: CLAuthorizationStatus
-    private(set) var isTracking: Bool = false
-    private(set) var lastErrorMessage: String?
+    @Published private(set) var authorizationStatus: CLAuthorizationStatus
+    @Published private(set) var isTracking: Bool = false
+    @Published private(set) var lastErrorMessage: String?
     
     var onLocationUpdate: ((CLLocation) -> Void)?
     
@@ -69,11 +68,10 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 // MARK: - Masa Başı Simülasyon Motoru
 
 @MainActor
-@Observable
-final class LocationSimulator {
-    private(set) var isRunning: Bool = false
-    var simulatedSpeedKmh: Double = 80.0
-    private(set) var simulatedDistanceMeters: Double = 0
+final class LocationSimulator: ObservableObject {
+    @Published private(set) var isRunning: Bool = false
+    @Published var simulatedSpeedKmh: Double = 80.0
+    @Published private(set) var simulatedDistanceMeters: Double = 0
     
     private var simulationTask: Task<Void, Never>?
     
@@ -130,4 +128,3 @@ final class LocationSimulator {
         isRunning = false
     }
 }
-
