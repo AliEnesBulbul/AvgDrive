@@ -3,11 +3,11 @@ import CoreLocation
 import UIKit
 
 struct ContentView: View {
-    @State private var store = CorridorStore()
-    @State private var recorder = CorridorRecorder()
-    @State private var corridorManager = SpeedCorridorManager()
-    @State private var locationService = LocationService()
-    @State private var voiceCoach = VoiceCoach()
+    @StateObject private var store = CorridorStore()
+    @StateObject private var recorder = CorridorRecorder()
+    @StateObject private var corridorManager = SpeedCorridorManager()
+    @StateObject private var locationService = LocationService()
+    @StateObject private var voiceCoach = VoiceCoach()
     
     @State private var latestLocation: CLLocation?
     @State private var showCorridorSheet: Bool = false
@@ -34,7 +34,7 @@ struct ContentView: View {
             .navigationTitle("AvgDrive")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         voiceCoach.isEnabled.toggle()
                         if !voiceCoach.isEnabled {
@@ -46,7 +46,7 @@ struct ContentView: View {
                     .tint(voiceCoach.isEnabled ? .blue : .secondary)
                 }
                 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showCorridorSheet = true
                     } label: {
@@ -78,21 +78,21 @@ struct ContentView: View {
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
         }
-        .onChange(of: locationService.isTracking) { _, isTracking in
+        .onChange(of: locationService.isTracking) { isTracking in
             UIApplication.shared.isIdleTimerDisabled = isTracking
         }
-        .onChange(of: store.zones) { _, updatedZones in
+        .onChange(of: store.zones) { updatedZones in
             corridorManager.zones = updatedZones
         }
-        .onChange(of: corridorManager.activeSession?.zone.id) { oldID, newID in
-            if oldID == nil, let zone = corridorManager.activeSession?.zone {
+        .onChange(of: corridorManager.activeSession?.zone.id) { newID in
+            if newID != nil, let zone = corridorManager.activeSession?.zone {
                 voiceCoach.announceZoneEntry(zone: zone)
             }
         }
-        .onChange(of: corridorManager.guidance) { _, newGuidance in
+        .onChange(of: corridorManager.guidance) { newGuidance in
             voiceCoach.handleGuidance(newGuidance)
         }
-        .onChange(of: corridorManager.lastCompletedSummary?.id) { _, _ in
+        .onChange(of: corridorManager.lastCompletedSummary?.id) { _ in
             if let summary = corridorManager.lastCompletedSummary {
                 voiceCoach.announceZoneExit(summary: summary)
             }
@@ -130,7 +130,7 @@ struct ContentView: View {
         case .slowDown(let target):
             return ("Yavaşla", "Hedef hız: \(Int(target.rounded())) km/sa", .red, "exclamationmark.triangle.fill")
         case .speedUp(let target):
-            return ("Hızlanabilirsin", "Hedef hız: \(Int(target.rounded())) km/sa", .blue, "gauge.with.needle.fill")
+            return ("Hızlanabilirsin", "Hedef hız: \(Int(target.rounded())) km/sa", .blue, "speedometer")
         }
     }
     
@@ -341,4 +341,3 @@ struct ContentView: View {
         voiceCoach.reset()
     }
 }
-
