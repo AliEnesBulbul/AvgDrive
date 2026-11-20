@@ -72,3 +72,60 @@ struct RecordedCorridorDraft: Equatable {
 // MARK: - Güzergah Kayıt Motoru
 
 @MainActor
+final class CorridorRecorder: ObservableObject {
+    @Published private(set) var isRecording: Bool = false
+    @Published private(set) var measuredDistanceMeters: Double = 0
+    @Published private(set) var completedDraft: RecordedCorridorDraft?
+    
+    private var entryLocation: CLLocation?
+    private var lastLocation: CLLocation?
+    
+    /// Giriş noktası işaretlendiğinde çağrılır.
+    func startRecording(at location: CLLocation) {
+        entryLocation = location
+        lastLocation = location
+        measuredDistanceMeters = 0
+        completedDraft = nil
+        isRecording = true
+    }
+    
+    /// Kayıt aktifken gelen her GPS konumunda gerçek yol mesafesini biriktirir.
+    func appendLocation(_ location: CLLocation) {
+        guard isRecording,
+              location.horizontalAccuracy >= 0,
+              let previous = lastLocation else { return }
+        
+        let delta = location.distance(from: previous)
+        if delta >= 1.0 {
+            measuredDistanceMeters += delta
+            lastLocation = location
+        }
+    }
+    
+    /// Çıkış noktası işaretlendiğinde kaydı tamamlar ve taslak üretir.
+    func finishRecording(at location: CLLocation) {
+        guard isRecording, let entry = entryLocation else { return }
+        
+        appendLocation(location)
+        
+        let finalDistance = max(measuredDistanceMeters, entry.distance(from: location))
+        
+        completedDraft = RecordedCorridorDraft(
+            entryLatitude: entry.coordinate.latitude,
+            entryLongitude: entry.coordinate.longitude,
+            exitLatitude: location.coordinate.latitude,
+            exitLongitude: location.coordinate.longitude,
+            measuredDistanceMeters: finalDistance
+        )
+        
+        isRecording = false
+    }
+    
+    func reset() {
+        isRecording = false
+        entryLocation = nil
+        lastLocation = nil
+        measuredDistanceMeters = 0
+        completedDraft = nil
+    }
+}
